@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+     http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+     http://www.springframework.org/schema/beans
+     http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+     http://www.springframework.org/schema/rabbit
+     http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd">
+
+    <!-- 配置连接工厂 -->
+    <rabbit:connection-factory id="connectionFactory" username="guest" password="guest" host="localhost"
+                               port="5672"/>
+
+    <!-- 定义rabbitmq template，用于发送和接收消息 -->
+    <rabbit:template id="amqpTemplate" connection-factory="connectionFactory" exchange="exchangeTest" />
+
+    <!-- 通过指定下面的admin信息，当前producer中的exchange和queue会在rabbitmq服务器上自动生成 -->
+    <rabbit:admin connection-factory="connectionFactory" />
+
+    <!-- 定义队列 -->
+    <rabbit:queue name="queueTest" durable="true" auto-delete="false" exclusive="false" />
+
+    <!-- 定义direct exchange，绑定队列 -->
+    <rabbit:direct-exchange name="exchangeTest" durable="true" auto-delete="false">
+        <rabbit:bindings>
+            <rabbit:binding queue="queueTest" key="queueTestKey" />
+        </rabbit:bindings>
+    </rabbit:direct-exchange>
+
+    <!-- 消息接收者 -->
+    <bean id="messageConsumer" class="com.damon.rabbitmq.consumer.RabbitMQConsumer" />
+
+    <!-- 监听器，当消息到达时会通知监控队列上的对象 -->
+    <rabbit:listener-container connection-factory="connectionFactory">
+        <rabbit:listener queues="queueTest" ref="messageConsumer" />
+    </rabbit:listener-container>
+</beans>
